@@ -1,0 +1,58 @@
+{
+  "projectType": "general",
+  "projectName": "duv'Assistant",
+  "projectDescription": "AI-powered code completion and snippet provider for Visual Studio Code",
+  "theme": "palm",
+  "primaryColor": "#218ecc",
+  "lightColor": "#ebf7f8",
+  "darkColor": "#7c98b0",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/ai-completion",
+          "guides/snippets",
+          "guides/configuration"
+        ]
+      },
+      {
+        "group": "API Reference",
+        "pages": [
+          "api/overview",
+          "api/ai-provider",
+          "api/snippet-provider",
+          "api/settings"
+        ]
+      },
+      {
+        "group": "Resources",
+        "pages": [
+          "troubleshooting",
+          "faq"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "AI-powered code suggestions using OpenAI",
+    "Custom snippet completions",
+    "Multi-language support (JavaScript, TypeScript, Python)",
+    "Real-time completion as you type"
+  ],
+  "publicApiSurface": [
+    "AICompletionProvider",
+    "SnippetCompletionProvider",
+    "settings.openAI",
+    "settings.supportedLanguages",
+    "getCodeSuggestion"
+  ]
+}
