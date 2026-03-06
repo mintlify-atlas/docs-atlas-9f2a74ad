@@ -56,7 +56,20 @@ HTTP client utility for making API requests.
 
 ```typescript
 import { getCodeSuggestion } from './utils/httpClient';
+
+// Function signature
+export async function getCodeSuggestion(
+  url: string, 
+  data: any, 
+  headers: any = {}
+): Promise<any>
 ```
+
+<Warning>
+**Note**: The current implementation has a mismatch between the function signature and its usage in `AICompletionProvider`. The function expects a URL as the first parameter, but the provider passes a prompt string. This will require API endpoint configuration to work correctly.
+</Warning>
+
+[View detailed documentation](/api/ai-provider)
 
 ## VS Code Integration
 

@@ -8,12 +8,16 @@ icon: question
 
 <Accordion title="What is duv'Assistant?">
 
-duv'Assistant is a VSCode extension that provides intelligent code completion using AI. It combines:
+duv'Assistant is a VSCode extension under development that aims to provide intelligent code completion using AI. It combines:
 
-- **AI-powered completions** from OpenAI's language models
-- **Snippet-based completions** for faster, offline suggestions
+- **AI-powered completions** from OpenAI's language models (in development)
+- **Snippet-based completions** for common code patterns (working)
 
 The extension registers completion providers for supported languages (JavaScript, TypeScript, and Python) and automatically activates when you open files in these languages.
+
+<Warning>
+The extension is in early development. AI completion features require building from source and additional configuration.
+</Warning>
 
 </Accordion>
 
@@ -29,14 +33,16 @@ These languages are defined in `/workspace/source/src/config/settings.ts:6`.
 
 ### Adding More Languages
 
-You can easily add support for additional languages:
+To add support for additional languages when building from source:
 
-1. Open `src/config/settings.ts`
+1. Clone the repository and navigate to `src/config/settings.ts`
 2. Add language identifiers to the `supportedLanguages` array:
 
 ```typescript
 supportedLanguages: ['javascript', 'typescript', 'python', 'java', 'go']
 ```
+
+3. Rebuild the extension with `npm run compile`
 
 3. Rebuild and reload the extension
 

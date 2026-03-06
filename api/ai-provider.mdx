@@ -95,6 +95,10 @@ The provider calls the `getCodeSuggestion` utility to fetch AI-generated suggest
 const suggestion = await getCodeSuggestion(prompt, undefined, { method: 'POST' });
 ```
 
+<Warning>
+**Implementation Note**: The current code passes `prompt` as the first argument, but `getCodeSuggestion` expects a URL. This indicates the function needs additional configuration or the implementation requires an API endpoint to be specified. This is an area of active development.
+</Warning>
+
 ### Error Handling
 
 Errors are logged to the console and an empty array is returned, ensuring the extension doesn't break the user experience:

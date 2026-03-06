@@ -47,11 +47,27 @@ You can check your VS Code version by going to **Help > About** in the menu bar.
   </Step>
 </Steps>
 
-## Configure OpenAI API Key
+## Development Setup
 
-To enable AI-powered completions, you need to configure your OpenAI API key in the extension settings.
+<Warning>
+**Important**: This extension is currently in early development. Configuration requires building from source, as there is no VS Code settings UI integration yet.
+</Warning>
+
+### For Developers: Building from Source
+
+To configure the extension with your own API key, you'll need to build it from source:
 
 <Steps>
+  <Step title="Clone the Repository">
+    Clone the extension source code:
+    
+    ```bash
+    git clone https://github.com/DUVAN100/duv-asisstant.git
+    cd duv-asisstant
+    npm install
+    ```
+  </Step>
+
   <Step title="Get Your OpenAI API Key">
     If you don't have an OpenAI API key:
     
@@ -59,26 +75,15 @@ To enable AI-powered completions, you need to configure your OpenAI API key in t
     2. Sign up or log in to your account
     3. Navigate to **API Keys** in your account settings
     4. Click **Create new secret key**
-    5. Copy the generated key (you won't be able to see it again)
+    5. Copy the generated key
     
     <Warning>
-    Keep your API key secure and never commit it to version control. Treat it like a password.
+    Keep your API key secure and never commit it to version control.
     </Warning>
   </Step>
 
-  <Step title="Locate the Extension Settings File">
-    Navigate to the extension's configuration file:
-    
-    ```bash
-    # The settings file is located at:
-    src/config/settings.ts
-    ```
-    
-    This file contains the configuration for your OpenAI integration.
-  </Step>
-
-  <Step title="Update the API Key">
-    Open `src/config/settings.ts` and replace `'TU_API_KEY'` with your actual OpenAI API key:
+  <Step title="Configure API Key">
+    Edit `src/config/settings.ts` and replace the placeholder with your API key:
     
     ```typescript
     export const settings = {
@@ -89,16 +94,22 @@ To enable AI-powered completions, you need to configure your OpenAI API key in t
         supportedLanguages: ['javascript', 'typescript', 'python'],
     };
     ```
-    
-    <Note>
-    The default model is `code-davinci-002`. You can change this to other OpenAI models like `gpt-3.5-turbo` or `gpt-4` based on your needs and API access.
-    </Note>
   </Step>
 
-  <Step title="Restart VS Code">
-    After updating the configuration, restart Visual Studio Code to ensure the changes take effect.
+  <Step title="Build and Run">
+    Build the extension and run it in development mode:
+    
+    ```bash
+    npm run compile
+    ```
+    
+    Then press `F5` in VS Code to launch the extension in a new Extension Development Host window.
   </Step>
 </Steps>
+
+<Note>
+Future versions will include a proper VS Code settings UI for easier configuration without rebuilding.
+</Note>
 
 ## Verify Installation
 
@@ -135,7 +146,7 @@ By default, duv'Assistant activates for the following languages:
 - Python (`.py`)
 
 <Note>
-You can add more languages by modifying the `supportedLanguages` array in `src/config/settings.ts`.
+To add more languages, modify the `supportedLanguages` array in `src/config/settings.ts` when building from source. See the [Configuration](/guides/configuration) guide for details.
 </Note>
 
 ## Troubleshooting
@@ -152,10 +163,11 @@ If the extension doesn't activate:
 
 If AI completions aren't working:
 
-1. Verify your OpenAI API key is correctly configured in `settings.ts`
+1. Verify your OpenAI API key is correctly configured in `src/config/settings.ts` (if building from source)
 2. Check your internet connection
-3. Review the VS Code **Output** panel (select "duv'Asisstant" from the dropdown) for error messages
+3. Review the VS Code **Output** panel for error messages
 4. Ensure you have available credits in your OpenAI account
+5. Note: The AI completion feature is in development and may require additional API endpoint configuration
 
 ### Snippets Not Showing
 

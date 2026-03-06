@@ -6,7 +6,11 @@ icon: 'gear'
 
 ## Overview
 
-duv'Assistant is configured through the `settings.ts` file, which controls OpenAI integration and language support. This guide covers all available configuration options and how to customize the extension for your workflow.
+duv'Assistant is configured through the `src/config/settings.ts` source file. This guide covers all available configuration options.
+
+<Warning>
+**Development Stage**: Configuration currently requires modifying source code and rebuilding the extension. Future versions will include VS Code settings UI integration.
+</Warning>
 
 ## Configuration File
 
@@ -37,12 +41,21 @@ The `openAI` object controls how the extension connects to OpenAI's API.
 </ParamField>
 
 <Steps>
+  <Step title="Clone and Setup">
+    Clone the repository and install dependencies:
+    ```bash
+    git clone https://github.com/DUVAN100/duv-asisstant.git
+    cd duv-asisstant
+    npm install
+    ```
+  </Step>
+
   <Step title="Get an API Key">
     Visit [platform.openai.com/api-keys](https://platform.openai.com/api-keys) and create a new API key.
   </Step>
   
   <Step title="Update settings.ts">
-    Replace `'TU_API_KEY'` with your actual API key:
+    Edit `src/config/settings.ts` and replace `'TU_API_KEY'` with your actual API key:
     ```typescript
     openAI: {
         apiKey: 'sk-proj-...',  // Your actual key
@@ -51,8 +64,12 @@ The `openAI` object controls how the extension connects to OpenAI's API.
     ```
   </Step>
   
-  <Step title="Reload Extension">
-    Reload the VSCode window (`Ctrl+Shift+P` → "Developer: Reload Window") to apply changes.
+  <Step title="Rebuild and Test">
+    Rebuild the extension:
+    ```bash
+    npm run compile
+    ```
+    Then press `F5` in VS Code to test in Extension Development Host.
   </Step>
 </Steps>
 
