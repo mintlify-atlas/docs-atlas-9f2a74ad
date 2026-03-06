@@ -1,0 +1,321 @@
+---
+title: 'Configuration'
+description: 'Configure OpenAI credentials, model selection, and supported languages'
+icon: 'gear'
+---
+
+## Overview
+
+duv'Assistant is configured through the `settings.ts` file, which controls OpenAI integration and language support. This guide covers all available configuration options and how to customize the extension for your workflow.
+
+## Configuration File
+
+The extension's configuration is centralized in `src/config/settings.ts`:
+
+```typescript
+export const settings = {
+    openAI: {
+        apiKey: 'TU_API_KEY',
+        model: 'code-davinci-002',
+    },
+    supportedLanguages: ['javascript', 'typescript', 'python'], // Agrega más lenguajes aquí
+};
+```
+
+## OpenAI Configuration
+
+The `openAI` object controls how the extension connects to OpenAI's API.
+
+### API Key Setup
+
+<ParamField path="openAI.apiKey" type="string" required>
+  Your OpenAI API key for authenticating requests.
+
+  **Default**: `'TU_API_KEY'` (placeholder)
+  
+  **Location**: `settings.ts:3`
+</ParamField>
+
+<Steps>
+  <Step title="Get an API Key">
+    Visit [platform.openai.com/api-keys](https://platform.openai.com/api-keys) and create a new API key.
+  </Step>
+  
+  <Step title="Update settings.ts">
+    Replace `'TU_API_KEY'` with your actual API key:
+    ```typescript
+    openAI: {
+        apiKey: 'sk-proj-...',  // Your actual key
+        model: 'code-davinci-002',
+    }
+    ```
+  </Step>
+  
+  <Step title="Reload Extension">
+    Reload the VSCode window (`Ctrl+Shift+P` → "Developer: Reload Window") to apply changes.
+  </Step>
+</Steps>
+
+<Warning>
+  Never commit your API key to version control. Consider using environment variables or a `.env` file for production deployments.
+</Warning>
+
+### Model Selection
+
+<ParamField path="openAI.model" type="string" default="code-davinci-002">
+  The OpenAI model used for code completions.
+
+  **Default**: `'code-davinci-002'`
+  
+  **Location**: `settings.ts:4`
+</ParamField>
+
+**Available Models**:
+
+| Model | Capability | Speed | Cost |
+|-------|-----------|-------|------|
+| `code-davinci-002` | Highest quality completions | Slower | Higher |
+| `code-cushman-001` | Good quality, faster | Faster | Lower |
+| `gpt-3.5-turbo` | General purpose | Medium | Medium |
+
+<Tip>
+  Start with `code-davinci-002` for best results. Switch to `code-cushman-001` if you need faster responses or want to reduce API costs.
+</Tip>
+
+**Example Configuration**:
+```typescript
+openAI: {
+    apiKey: 'sk-proj-your-key-here',
+    model: 'code-cushman-001',  // Faster, cheaper option
+}
+```
+
+## Supported Languages
+
+<ParamField path="supportedLanguages" type="string[]" default="['javascript', 'typescript', 'python']">
+  Array of language identifiers where the extension will provide completions and snippets.
+
+  **Default**: `['javascript', 'typescript', 'python']`
+  
+  **Location**: `settings.ts:6`
+</ParamField>
+
+The extension registers completion providers for each language in this array:
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+    settings.supportedLanguages.forEach(language => {
+        const aiProvider = vscode.languages.registerCompletionItemProvider(
+            { scheme: 'file', language },
+            new AICompletionProvider()
+        );
+
+        const snippetProvider = vscode.languages.registerCompletionItemProvider(  
+            { scheme: 'file', language },
+            new SnippetCompletionProvider()
+        );
+
+        context.subscriptions.push(aiProvider, snippetProvider);
+    });
+}
+```
+
+### Default Languages
+
+<AccordionGroup>
+  <Accordion title="JavaScript" icon="js">
+    Language identifier: `javascript`
+    
+    Provides completions in `.js` files and JavaScript code blocks.
+  </Accordion>
+
+  <Accordion title="TypeScript" icon="ts">
+    Language identifier: `typescript`
+    
+    Provides completions in `.ts` and `.tsx` files.
+  </Accordion>
+
+  <Accordion title="Python" icon="python">
+    Language identifier: `python`
+    
+    Provides completions in `.py` files and Python scripts.
+  </Accordion>
+</AccordionGroup>
+
+### Adding More Languages
+
+You can extend support to any language VSCode recognizes:
+
+<Steps>
+  <Step title="Find the Language ID">
+    Open a file of the language you want to add, then run:
+    
+    `Ctrl+Shift+P` → "Change Language Mode"
+    
+    The language ID is shown in parentheses (e.g., "Java (java)").
+  </Step>
+  
+  <Step title="Update supportedLanguages">
+    Add the language ID to the array:
+    ```typescript
+    supportedLanguages: [
+        'javascript',
+        'typescript', 
+        'python',
+        'java',        // Added Java
+        'go',          // Added Go
+        'rust',        // Added Rust
+    ]
+    ```
+  </Step>
+  
+  <Step title="Reload Extension">
+    Reload VSCode to activate completions for the new languages.
+  </Step>
+</Steps>
+
+**Common Language Identifiers**:
+
+```typescript
+supportedLanguages: [
+    'javascript',
+    'typescript',
+    'python',
+    'java',
+    'cpp',           // C++
+    'csharp',        // C#
+    'go',
+    'rust',
+    'php',
+    'ruby',
+    'swift',
+    'kotlin',
+    'html',
+    'css',
+    'sql',
+]
+```
+
+<Note>
+  While you can enable any language, the AI model's quality varies. The `code-davinci-002` model works best with popular languages like JavaScript, Python, TypeScript, and Go.
+</Note>
+
+## Configuration Architecture
+
+The settings module is imported throughout the extension:
+
+```typescript
+import { settings } from './config/settings';
+```
+
+### Usage in Extension Activation
+
+From `extension.ts:7`:
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+    settings.supportedLanguages.forEach(language => {
+        // Register providers for each language
+    });
+
+    vscode.window.showInformationMessage('Extensión de autocompletado activada.');
+}
+```
+
+### Usage in HTTP Client
+
+While not directly shown in the current `httpClient.ts`, the API key and model from settings would typically be used when making OpenAI API calls:
+
+```typescript
+import { settings } from '../config/settings';
+
+const response = await axios.post('https://api.openai.com/v1/completions', 
+    {
+        model: settings.openAI.model,
+        prompt: yourPrompt,
+        // ... other options
+    },
+    {
+        headers: {
+            'Authorization': `Bearer ${settings.openAI.apiKey}`,
+            'Content-Type': 'application/json',
+        }
+    }
+);
+```
+
+## Environment Variables (Advanced)
+
+For better security, consider using environment variables instead of hardcoding the API key:
+
+```typescript
+export const settings = {
+    openAI: {
+        apiKey: process.env.OPENAI_API_KEY || 'TU_API_KEY',
+        model: process.env.OPENAI_MODEL || 'code-davinci-002',
+    },
+    supportedLanguages: ['javascript', 'typescript', 'python'],
+};
+```
+
+Then create a `.env` file:
+
+```bash
+OPENAI_API_KEY=sk-proj-your-key-here
+OPENAI_MODEL=code-davinci-002
+```
+
+<Warning>
+  Add `.env` to your `.gitignore` to prevent accidentally committing secrets.
+</Warning>
+
+## Complete Configuration Example
+
+Here's a fully configured `settings.ts` with multiple languages and environment variables:
+
+```typescript
+export const settings = {
+    openAI: {
+        apiKey: process.env.OPENAI_API_KEY || 'TU_API_KEY',
+        model: process.env.OPENAI_MODEL || 'code-davinci-002',
+    },
+    supportedLanguages: [
+        'javascript',
+        'typescript',
+        'python',
+        'java',
+        'go',
+        'rust',
+        'cpp',
+        'csharp',
+    ],
+};
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="AI completions not working" icon="triangle-exclamation">
+    **Check these items**:
+    1. Verify your API key is correct in `settings.ts`
+    2. Ensure you have internet connectivity
+    3. Check the VSCode console for error messages (`Help` → `Toggle Developer Tools`)
+    4. Verify your OpenAI account has available credits
+  </Accordion>
+
+  <Accordion title="Completions not appearing in some files" icon="file-circle-xmark">
+    The file's language might not be in `supportedLanguages`. Check the current language mode and add it to the array if needed.
+  </Accordion>
+
+  <Accordion title="Settings changes not taking effect" icon="rotate-right">
+    After modifying `settings.ts`, you must reload the VSCode window:
+    
+    `Ctrl+Shift+P` → "Developer: Reload Window"
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+- Learn how to use [AI Completion](/guides/ai-completion)
+- Explore available [Snippets](/guides/snippets)
+- Check the OpenAI [API documentation](https://platform.openai.com/docs) for advanced options

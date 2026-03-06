@@ -1,0 +1,202 @@
+---
+title: 'Settings'
+description: 'Configuration object for API keys, models, and supported languages'
+---
+
+## Overview
+
+The `settings` object provides centralized configuration for the duv'Assistant extension. It contains OpenAI API credentials, model selection, and a list of supported programming languages.
+
+## Object Structure
+
+```typescript
+export const settings = {
+    openAI: {
+        apiKey: string,
+        model: string,
+    },
+    supportedLanguages: string[],
+};
+```
+
+## Properties
+
+### openAI
+
+Configuration for OpenAI API integration.
+
+<ParamField path="openAI" type="object" required>
+  Contains API key and model settings for OpenAI requests.
+</ParamField>
+
+#### openAI.apiKey
+
+<ParamField path="openAI.apiKey" type="string" required>
+  Your OpenAI API key for authentication.
+  
+  **Default value**: `'TU_API_KEY'`
+  
+  **Usage**: Replace with your actual OpenAI API key before using the extension.
+  
+  ```typescript
+  settings.openAI.apiKey = 'sk-your-actual-api-key';
+  ```
+</ParamField>
+
+#### openAI.model
+
+<ParamField path="openAI.model" type="string" required>
+  The OpenAI model to use for code completion.
+  
+  **Default value**: `'code-davinci-002'`
+  
+  **Available models**:
+  - `code-davinci-002` - Most capable Codex model
+  - `code-cushman-001` - Faster, less capable alternative
+  
+  ```typescript
+  settings.openAI.model = 'code-davinci-002';
+  ```
+</ParamField>
+
+### supportedLanguages
+
+<ParamField path="supportedLanguages" type="string[]" required>
+  Array of programming languages for which the extension provides completions.
+  
+  **Default value**: `['javascript', 'typescript', 'python']`
+  
+  **Type**: Array of VS Code language identifiers
+  
+  **Usage**: The extension registers completion providers for each language in this array. Add or remove languages based on your needs.
+  
+  ```typescript
+  // Add more languages
+  settings.supportedLanguages = [
+      'javascript', 
+      'typescript', 
+      'python',
+      'java',
+      'cpp',
+      'go'
+  ];
+  ```
+</ParamField>
+
+## Default Configuration
+
+```typescript
+export const settings = {
+    openAI: {
+        apiKey: 'TU_API_KEY',
+        model: 'code-davinci-002',
+    },
+    supportedLanguages: ['javascript', 'typescript', 'python'],
+};
+```
+
+## Usage in Extension
+
+### Language Registration
+
+The `supportedLanguages` array is used to register completion providers:
+
+```typescript
+import { settings } from './config/settings';
+import { AICompletionProvider } from './commands/aiProvider';
+import { SnippetCompletionProvider } from './commands/snippetProvider';
+
+settings.supportedLanguages.forEach(language => {
+    const aiProvider = vscode.languages.registerCompletionItemProvider(
+        { scheme: 'file', language },
+        new AICompletionProvider()
+    );
+
+    const snippetProvider = vscode.languages.registerCompletionItemProvider(  
+        { scheme: 'file', language },
+        new SnippetCompletionProvider()
+    );
+
+    context.subscriptions.push(aiProvider, snippetProvider);
+});
+```
+
+### API Configuration
+
+The OpenAI settings are used when making API requests through the HTTP client.
+
+## Configuration Best Practices
+
+### Security
+
+<Warning>
+  Never commit your actual API key to version control. Use environment variables or VS Code's secret storage instead.
+</Warning>
+
+```typescript
+// Good practice: Use environment variables
+settings.openAI.apiKey = process.env.OPENAI_API_KEY || 'TU_API_KEY';
+```
+
+### Language Support
+
+Only include languages you need to minimize resource usage:
+
+```typescript
+// Minimal configuration
+settings.supportedLanguages = ['javascript'];
+
+// Full-stack development
+settings.supportedLanguages = ['javascript', 'typescript', 'python', 'html', 'css'];
+```
+
+### Model Selection
+
+Choose the appropriate model based on your needs:
+
+- **code-davinci-002**: Best quality, slower, more expensive
+- **code-cushman-001**: Faster responses, lower quality, cheaper
+
+## Type Definitions
+
+```typescript
+interface Settings {
+    openAI: {
+        apiKey: string;
+        model: string;
+    };
+    supportedLanguages: string[];
+}
+
+export const settings: Settings;
+```
+
+## Modifying Settings at Runtime
+
+Settings can be modified programmatically:
+
+```typescript
+import { settings } from './config/settings';
+
+// Update API key
+settings.openAI.apiKey = 'new-api-key';
+
+// Change model
+settings.openAI.model = 'code-cushman-001';
+
+// Add a language
+settings.supportedLanguages.push('rust');
+
+// Replace all languages
+settings.supportedLanguages = ['go', 'rust'];
+```
+
+<Note>
+  Changes to `supportedLanguages` at runtime will not affect already-registered providers. Modify this before extension activation.
+</Note>
+
+## Related
+
+- [AICompletionProvider](/api/ai-provider) - Uses OpenAI settings for API calls
+- [Extension Activation](/api/overview#activation) - How settings are used during startup
+- [VS Code Language Identifiers](https://code.visualstudio.com/docs/languages/identifiers) - Valid language values

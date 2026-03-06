@@ -1,0 +1,245 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for duv'Assistant
+icon: wrench
+---
+
+## Common Issues
+
+This guide covers common problems you might encounter with duv'Assistant and how to resolve them.
+
+<Accordion title="Extension not showing completions">
+
+### Symptoms
+- No AI suggestions appear when typing
+- The completion popup doesn't show AI-generated options
+
+### Solutions
+
+1. **Check if the extension is activated**
+   
+   When duv'Assistant activates successfully, you should see a message: "Extensión de autocompletado activada." in the bottom-right corner of VSCode.
+   
+   If you don't see this message, try:
+   - Reloading VSCode window (Ctrl+Shift+P → "Developer: Reload Window")
+   - Checking the Output panel (View → Output) for error messages
+
+2. **Verify your language is supported**
+   
+   The extension only works with specific languages. Check [Supported Languages](#supported-languages) below.
+
+3. **Trigger completions manually**
+   
+   Press `Ctrl+Space` to manually trigger the completion provider.
+
+</Accordion>
+
+<Accordion title="OpenAI API key not configured">
+
+<Warning>
+  This is the most common issue. The extension will not work without a valid OpenAI API key.
+</Warning>
+
+### Symptoms
+- No completions appear
+- Console errors about API authentication
+- HTTP request failures
+
+### Solution
+
+The API key is hardcoded in the source code and must be configured before using the extension:
+
+1. Open `/workspace/source/src/config/settings.ts`
+
+2. Replace `'TU_API_KEY'` with your actual OpenAI API key:
+
+```typescript
+export const settings = {
+    openAI: {
+        apiKey: 'sk-your-actual-api-key-here', // Replace this!
+        model: 'code-davinci-002',
+    },
+    supportedLanguages: ['javascript', 'typescript', 'python'],
+};
+```
+
+3. Rebuild and reload the extension
+
+<Note>
+  Get your OpenAI API key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+</Note>
+
+</Accordion>
+
+<Accordion title="API request failures">
+
+### Symptoms
+- Error message: "Error en la comunicación con la API."
+- Console errors in the Developer Tools
+- Completions stop working intermittently
+
+### Possible Causes and Solutions
+
+1. **Invalid API key**
+   - Verify your API key is correct in `settings.ts`
+   - Ensure the key hasn't expired or been revoked
+   - Check your OpenAI account status
+
+2. **Network connectivity issues**
+   - Check your internet connection
+   - Verify you can access OpenAI's API endpoints
+   - Check if your firewall or proxy is blocking requests
+
+3. **Rate limiting**
+   - You may have exceeded OpenAI's rate limits
+   - Wait a few minutes and try again
+   - Consider upgrading your OpenAI plan
+
+4. **API endpoint issues**
+   - The httpClient.ts currently has a generic implementation
+   - Verify the URL being called is correct for OpenAI's API
+   - Check OpenAI's status page for service outages
+
+### Debugging
+
+To see detailed error information:
+
+1. Open VSCode Developer Tools: **Help → Toggle Developer Tools**
+2. Go to the **Console** tab
+3. Look for errors starting with "Error al generar sugerencia de IA:" or "Error en la solicitud HTTP:"
+
+</Accordion>
+
+<Accordion title="Extension not activating">
+
+### Symptoms
+- No activation message appears
+- Extension appears in the Extensions list but doesn't work
+- No completion providers are registered
+
+### Solutions
+
+1. **Check extension installation**
+   ```bash
+   # In the extension directory
+   npm install
+   npm run compile
+   ```
+
+2. **Verify activation events**
+   - Check your `package.json` has proper activation events
+   - The extension should activate when opening supported file types
+
+3. **Look for activation errors**
+   - Open Developer Tools (Help → Toggle Developer Tools)
+   - Check the Console for TypeScript or runtime errors
+   - Look in Output → Extension Host for detailed logs
+
+4. **Reload the window**
+   - Press `Ctrl+Shift+P`
+   - Type "Developer: Reload Window"
+   - Press Enter
+
+</Accordion>
+
+<Accordion title="Language not supported">
+
+### Symptoms
+- Completions work in some files but not others
+- AI suggestions only appear for JavaScript/TypeScript/Python
+
+### Solution
+
+The extension currently only supports languages defined in `settings.ts:6`:
+
+- JavaScript
+- TypeScript  
+- Python
+
+To add more languages:
+
+1. Edit `/workspace/source/src/config/settings.ts`
+
+2. Add your desired language to the array:
+
+```typescript
+supportedLanguages: ['javascript', 'typescript', 'python', 'java', 'go', 'rust']
+```
+
+3. Rebuild the extension:
+   ```bash
+   npm run compile
+   ```
+
+4. Reload VSCode window
+
+<Info>
+  Use VSCode's language identifiers. Common ones: `java`, `go`, `rust`, `cpp`, `csharp`, `php`, `ruby`
+</Info>
+
+</Accordion>
+
+<Accordion title="Completions are slow or delayed">
+
+### Symptoms
+- Long wait time before completions appear
+- Extension feels unresponsive
+
+### Causes
+
+1. **Network latency**
+   - The extension makes API calls to OpenAI for each completion
+   - Network speed directly affects response time
+
+2. **Large context**
+   - The AI provider sends all code from the start of the file to the cursor position (aiProvider.ts:9)
+   - Very long files result in larger prompts and slower responses
+
+### Solutions
+
+- Use on files with reasonable length (< 500 lines)
+- Ensure stable internet connection
+- Consider implementing caching for repeated requests
+- Use snippet completions for faster, offline suggestions
+
+</Accordion>
+
+## Checking Extension Status
+
+To verify the extension is working properly:
+
+1. **Look for the activation message**
+   - When VSCode starts, you should see: "Extensión de autocompletado activada."
+   - This message appears in the bottom-right corner
+
+2. **Check registered providers**
+   - Open a supported file type (.js, .ts, .py)
+   - Start typing and press `Ctrl+Space`
+   - You should see completion suggestions including "Sugerencia de IA"
+
+3. **Verify in Developer Tools**
+   - Open Help → Toggle Developer Tools
+   - In Console, there should be no red errors related to the extension
+
+## Supported Languages
+
+Currently configured languages (from `settings.ts:6`):
+
+- **JavaScript** (.js files)
+- **TypeScript** (.ts files)
+- **Python** (.py files)
+
+See "Language not supported" above to add more languages.
+
+## Getting Help
+
+If you're still experiencing issues:
+
+1. Check the VSCode Output panel (View → Output)
+2. Select "Extension Host" from the dropdown
+3. Look for error messages related to duv'Assistant
+4. Check the Developer Tools Console for detailed error traces
+
+<Warning>
+  Always ensure your OpenAI API key is valid and has sufficient credits before troubleshooting other issues.
+</Warning>

@@ -1,0 +1,170 @@
+---
+title: 'AICompletionProvider'
+description: 'AI-powered code completion provider using external API integration'
+---
+
+## Overview
+
+The `AICompletionProvider` class implements VS Code's `CompletionItemProvider` interface to provide AI-generated code suggestions. It captures the code context before the cursor and sends it to an external API for intelligent completion.
+
+## Class Definition
+
+```typescript
+export class AICompletionProvider implements vscode.CompletionItemProvider {
+    async provideCompletionItems(
+        document: vscode.TextDocument,
+        position: vscode.Position
+    ): Promise<vscode.CompletionItem[]>
+}
+```
+
+## Methods
+
+### provideCompletionItems
+
+Generates AI-powered code completion suggestions based on the current document context.
+
+```typescript
+async provideCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position
+): Promise<vscode.CompletionItem[]>
+```
+
+#### Parameters
+
+<ParamField path="document" type="vscode.TextDocument" required>
+  The text document in which the completion was triggered. Contains the full file content and metadata.
+</ParamField>
+
+<ParamField path="position" type="vscode.Position" required>
+  The position at which the completion was triggered. Represents the cursor location (line and character).
+</ParamField>
+
+#### Returns
+
+<ResponseField name="Promise<vscode.CompletionItem[]>" type="Promise<vscode.CompletionItem[]>">
+  A promise that resolves to an array of completion items. Returns an empty array if an error occurs or no suggestions are available.
+</ResponseField>
+
+#### Completion Item Structure
+
+Each returned completion item has the following properties:
+
+<ResponseField name="label" type="string">
+  Display label: `'Sugerencia de IA'`
+</ResponseField>
+
+<ResponseField name="kind" type="vscode.CompletionItemKind">
+  Item kind: `vscode.CompletionItemKind.Snippet`
+</ResponseField>
+
+<ResponseField name="insertText" type="string">
+  The actual code suggestion returned from the AI API (trimmed)
+</ResponseField>
+
+<ResponseField name="documentation" type="vscode.MarkdownString">
+  Documentation string: `'Sugerencia generada por OpenAI.'`
+</ResponseField>
+
+## Implementation Details
+
+### Context Gathering
+
+The provider captures all text from the beginning of the document to the cursor position:
+
+```typescript
+const textBeforeCursor = document.getText(
+    new vscode.Range(new vscode.Position(0, 0), position)
+);
+```
+
+### Prompt Construction
+
+The context is formatted into a prompt for the AI model:
+
+```typescript
+const prompt = `Completa el siguiente código:\n\n${textBeforeCursor}`;
+```
+
+### API Request
+
+The provider calls the `getCodeSuggestion` utility to fetch AI-generated suggestions:
+
+```typescript
+const suggestion = await getCodeSuggestion(prompt, undefined, { method: 'POST' });
+```
+
+### Error Handling
+
+Errors are logged to the console and an empty array is returned, ensuring the extension doesn't break the user experience:
+
+```typescript
+try {
+    // API call and completion creation
+} catch (error) {
+    console.error('Error al generar sugerencia de IA:', error);
+    return [];
+}
+```
+
+## Full Implementation
+
+```typescript
+import * as vscode from 'vscode';
+import { getCodeSuggestion } from '../utils/httpClient';
+
+export class AICompletionProvider implements vscode.CompletionItemProvider {
+    async provideCompletionItems(
+        document: vscode.TextDocument,
+        position: vscode.Position
+    ): Promise<vscode.CompletionItem[]> {
+        const textBeforeCursor = document.getText(
+            new vscode.Range(new vscode.Position(0, 0), position)
+        );
+        const prompt = `Completa el siguiente código:\n\n${textBeforeCursor}`;
+
+        try {
+            const suggestion = await getCodeSuggestion(
+                prompt, 
+                undefined, 
+                { method: 'POST' }
+            );
+
+            const item = new vscode.CompletionItem(
+                'Sugerencia de IA', 
+                vscode.CompletionItemKind.Snippet
+            );
+            item.insertText = suggestion.trim();
+            item.documentation = new vscode.MarkdownString(
+                'Sugerencia generada por OpenAI.'
+            );
+            return [item];
+        } catch (error) {
+            console.error('Error al generar sugerencia de IA:', error);
+            return [];
+        }
+    }
+}
+```
+
+## Usage Example
+
+The provider is registered in the extension's `activate` function:
+
+```typescript
+import { AICompletionProvider } from './commands/aiProvider';
+
+const aiProvider = vscode.languages.registerCompletionItemProvider(
+    { scheme: 'file', language: 'javascript' },
+    new AICompletionProvider()
+);
+
+context.subscriptions.push(aiProvider);
+```
+
+## Related
+
+- [Settings Configuration](/api/settings) - Configure API key and model
+- [HTTP Client](/api/overview#getCodeSuggestion) - Underlying API request utility
+- [SnippetCompletionProvider](/api/snippet-provider) - Predefined snippet provider

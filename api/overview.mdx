@@ -1,0 +1,112 @@
+---
+title: "API Overview"
+description: "Complete reference for the duv'Assistant extension API"
+---
+
+## Introduction
+
+The duv'Assistant extension provides AI-powered code completion and snippet management for VS Code. This API reference documents the core classes, functions, and configuration options that power the extension.
+
+## Architecture
+
+The extension follows a provider-based architecture:
+
+1. **AICompletionProvider** - Handles AI-powered code suggestions using external API calls
+2. **SnippetCompletionProvider** - Provides predefined code snippets for common patterns
+3. **Settings** - Centralized configuration for API keys, models, and supported languages
+4. **HTTP Client** - Utility for making API requests to external services
+
+## Main Exports
+
+The extension exports the following components:
+
+### AICompletionProvider
+
+Implements `vscode.CompletionItemProvider` to provide AI-generated code completions.
+
+```typescript
+import { AICompletionProvider } from './commands/aiProvider';
+```
+
+[View detailed documentation](/api/ai-provider)
+
+### SnippetCompletionProvider
+
+Implements `vscode.CompletionItemProvider` to provide predefined code snippets.
+
+```typescript
+import { SnippetCompletionProvider } from './commands/snippetProvider';
+```
+
+[View detailed documentation](/api/snippet-provider)
+
+### Settings
+
+Configuration object containing API keys, model settings, and supported languages.
+
+```typescript
+import { settings } from './config/settings';
+```
+
+[View detailed documentation](/api/settings)
+
+### getCodeSuggestion
+
+HTTP client utility for making API requests.
+
+```typescript
+import { getCodeSuggestion } from './utils/httpClient';
+```
+
+## VS Code Integration
+
+The extension integrates with VS Code through the standard extension lifecycle:
+
+### Activation
+
+The `activate` function registers completion providers for all supported languages:
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+    settings.supportedLanguages.forEach(language => {
+        const aiProvider = vscode.languages.registerCompletionItemProvider(
+            { scheme: 'file', language },
+            new AICompletionProvider()
+        );
+
+        const snippetProvider = vscode.languages.registerCompletionItemProvider(  
+            { scheme: 'file', language },
+            new SnippetCompletionProvider()
+        );
+
+        context.subscriptions.push(aiProvider, snippetProvider);
+    });
+
+    vscode.window.showInformationMessage('Extensión de autocompletado activada.');
+}
+```
+
+### Deactivation
+
+The `deactivate` function handles cleanup when the extension is disabled:
+
+```typescript
+export function deactivate() {
+    vscode.window.showInformationMessage('Extensión de autocompletado desactivada.');
+}
+```
+
+## Extension Flow
+
+1. **Initialization**: Extension activates and registers completion providers for supported languages
+2. **User Input**: User types in a supported file type (JavaScript, TypeScript, or Python)
+3. **Completion Trigger**: VS Code triggers the appropriate completion provider
+4. **AI Provider**: Sends context to external API and returns suggestions
+5. **Snippet Provider**: Returns matching predefined snippets
+6. **Display**: Completion items are shown in the VS Code completion menu
+
+## Next Steps
+
+- [AICompletionProvider API](/api/ai-provider)
+- [SnippetCompletionProvider API](/api/snippet-provider)
+- [Settings Configuration](/api/settings)

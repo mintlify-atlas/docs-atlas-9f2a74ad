@@ -1,0 +1,222 @@
+---
+title: 'SnippetCompletionProvider'
+description: 'Predefined code snippet completion provider for common patterns'
+---
+
+## Overview
+
+The `SnippetCompletionProvider` class implements VS Code's `CompletionItemProvider` interface to provide predefined code snippets for common programming patterns. Unlike the AI provider, this returns static snippets with tab stops for quick code insertion.
+
+## Class Definition
+
+```typescript
+export class SnippetCompletionProvider implements vscode.CompletionItemProvider {
+    provideCompletionItems(): vscode.CompletionItem[]
+}
+```
+
+## Methods
+
+### provideCompletionItems
+
+Returns an array of predefined code snippet completion items.
+
+```typescript
+provideCompletionItems(): vscode.CompletionItem[]
+```
+
+#### Parameters
+
+This method takes no parameters. It always returns the same set of predefined snippets regardless of context.
+
+#### Returns
+
+<ResponseField name="vscode.CompletionItem[]" type="vscode.CompletionItem[]">
+  An array of completion items representing predefined code snippets. Returns an empty array if no snippets are available.
+</ResponseField>
+
+## Available Snippets
+
+The provider includes the following predefined snippets:
+
+### for-loop
+
+A basic for loop with tab stops for customization.
+
+<ParamField path="label" type="string">
+  `'for-loop'`
+</ParamField>
+
+<ParamField path="kind" type="vscode.CompletionItemKind">
+  `vscode.CompletionItemKind.Snippet`
+</ParamField>
+
+<ParamField path="documentation" type="string">
+  `'Bucle for básico.'`
+</ParamField>
+
+<ParamField path="insertText" type="vscode.SnippetString">
+  ```
+  for (let ${1:i} = 0; ${1:i} < ${2:array}.length; ${1:i}++) {
+      ${3:console.log(${2:array}[${1:i}])}
+  }
+  ```
+</ParamField>
+
+### console-log
+
+A console.log statement with a tab stop for the message.
+
+<ParamField path="label" type="string">
+  `'console-log'`
+</ParamField>
+
+<ParamField path="kind" type="vscode.CompletionItemKind">
+  `vscode.CompletionItemKind.Snippet`
+</ParamField>
+
+<ParamField path="documentation" type="string">
+  `'Imprime un mensaje en la consola.'`
+</ParamField>
+
+<ParamField path="insertText" type="vscode.SnippetString">
+  ```
+  console.log(${1:mensaje});
+  ```
+</ParamField>
+
+## Snippet Format
+
+Snippets use VS Code's `SnippetString` format with tab stops:
+
+- `${1:i}` - First tab stop with default value "i"
+- `${2:array}` - Second tab stop with default value "array"
+- `${3:...}` - Third tab stop
+- Multiple instances of the same number (e.g., `${1:i}`) are synchronized
+
+## Implementation Details
+
+### Snippet Definitions
+
+Snippets are defined as an array of objects:
+
+```typescript
+const snippets = [
+    {
+        label: 'for-loop',
+        kind: vscode.CompletionItemKind.Snippet,
+        documentation: 'Bucle for básico.',
+        insertText: new vscode.SnippetString(
+            `for (let \${1:i} = 0; \${1:i} < \${2:array}.length; \${1:i}++) {\n\t\${3:console.log(\${2:array}[\${1:i}])}\n}`
+        ),
+    },
+    {
+        label: 'console-log',
+        kind: vscode.CompletionItemKind.Snippet,
+        documentation: 'Imprime un mensaje en la consola.',
+        insertText: new vscode.SnippetString(`console.log(\${1:mensaje});`),
+    },
+];
+```
+
+### Empty Array Handling
+
+The provider includes a safety check to return an empty array if no snippets are defined:
+
+```typescript
+if (snippets.length === 0) {
+    return [];
+}
+```
+
+### Completion Item Mapping
+
+Snippets are transformed into VS Code completion items:
+
+```typescript
+return snippets.map(snippet => {
+    const completionItem = new vscode.CompletionItem(snippet.label, snippet.kind);
+    completionItem.documentation = new vscode.MarkdownString(snippet.documentation);
+    completionItem.insertText = snippet.insertText;
+    return completionItem;
+});
+```
+
+## Full Implementation
+
+```typescript
+import * as vscode from 'vscode';
+
+export class SnippetCompletionProvider implements vscode.CompletionItemProvider {
+    provideCompletionItems(): vscode.CompletionItem[] {
+        const snippets = [
+            {
+                label: 'for-loop',
+                kind: vscode.CompletionItemKind.Snippet,
+                documentation: 'Bucle for básico.',
+                insertText: new vscode.SnippetString(
+                    `for (let \${1:i} = 0; \${1:i} < \${2:array}.length; \${1:i}++) {\n\t\${3:console.log(\${2:array}[\${1:i}])}\n}`
+                ),
+            },
+            {
+                label: 'console-log',
+                kind: vscode.CompletionItemKind.Snippet,
+                documentation: 'Imprime un mensaje en la consola.',
+                insertText: new vscode.SnippetString(`console.log(\${1:mensaje});`),
+            },
+        ];
+
+        if (snippets.length === 0) {
+            return [];
+        }
+
+        return snippets.map(
+            snippet => {
+                const completionItem = new vscode.CompletionItem(
+                    snippet.label, 
+                    snippet.kind
+                );
+                completionItem.documentation = new vscode.MarkdownString(
+                    snippet.documentation
+                );
+                completionItem.insertText = snippet.insertText;
+                return completionItem;
+            }
+        );
+    }
+}
+```
+
+## Usage Example
+
+The provider is registered in the extension's `activate` function:
+
+```typescript
+import { SnippetCompletionProvider } from './commands/snippetProvider';
+
+const snippetProvider = vscode.languages.registerCompletionItemProvider(  
+    { scheme: 'file', language: 'javascript' },
+    new SnippetCompletionProvider()
+);
+
+context.subscriptions.push(snippetProvider);
+```
+
+## Extending Snippets
+
+To add new snippets, add objects to the `snippets` array following this structure:
+
+```typescript
+{
+    label: 'snippet-name',
+    kind: vscode.CompletionItemKind.Snippet,
+    documentation: 'Description of what this snippet does.',
+    insertText: new vscode.SnippetString('code with ${1:tabstop}')
+}
+```
+
+## Related
+
+- [AICompletionProvider](/api/ai-provider) - AI-powered completion provider
+- [Settings Configuration](/api/settings) - Configure supported languages
+- [VS Code Snippet Syntax](https://code.visualstudio.com/docs/editor/userdefinedsnippets#_snippet-syntax) - Official snippet documentation

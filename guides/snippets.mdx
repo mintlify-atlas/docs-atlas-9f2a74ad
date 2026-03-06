@@ -1,0 +1,234 @@
+---
+title: 'Code Snippets'
+description: 'Predefined code templates for faster development'
+icon: 'code'
+---
+
+## Overview
+
+duv'Assistant includes a powerful snippet system that provides predefined code templates for common programming patterns. Unlike AI completions, snippets are deterministic, instant, and don't require an API connection.
+
+## How Snippets Work
+
+The snippet system is implemented through the `SnippetCompletionProvider` class:
+
+```typescript
+import * as vscode from 'vscode';
+
+export class SnippetCompletionProvider implements vscode.CompletionItemProvider {
+    provideCompletionItems(): vscode.CompletionItem[] {
+        const snippets = [
+            {
+                label: 'for-loop',
+                kind: vscode.CompletionItemKind.Snippet,
+                documentation: 'Bucle for básico.',
+                insertText: new vscode.SnippetString(
+                    `for (let ${1:i} = 0; ${1:i} < ${2:array}.length; ${1:i}++) {\n\t${3:console.log(${2:array}[${1:i}])}\n}`
+                ),
+            },
+            {
+                label: 'console-log',
+                kind: vscode.CompletionItemKind.Snippet,
+                documentation: 'Imprime un mensaje en la consola.',
+                insertText: new vscode.SnippetString(`console.log(${1:mensaje});`),
+            },
+        ];
+
+        return snippets.map(
+            snippet => {
+                const completionItem = new vscode.CompletionItem(snippet.label, snippet.kind);
+                completionItem.documentation = new vscode.MarkdownString(snippet.documentation);
+                completionItem.insertText = snippet.insertText;
+                return completionItem;
+            }
+        );
+    }
+}
+```
+
+## Available Snippets
+
+duv'Assistant currently includes two core snippets:
+
+<AccordionGroup>
+  <Accordion title="for-loop - Basic For Loop" icon="rotate">
+    Creates a standard for loop with tab stops for quick customization.
+
+    **Trigger**: Type `for-loop` and select from completions
+
+    **Generated Code**:
+    ```javascript
+    for (let i = 0; i < array.length; i++) {
+        console.log(array[i])
+    }
+    ```
+
+    **Tab Stops**:
+    - `$1` - Iterator variable name (default: `i`)
+    - `$2` - Array variable name (default: `array`)
+    - `$3` - Loop body (default: `console.log(array[i])`)
+
+    **Implementation**:
+    ```typescript
+    {
+        label: 'for-loop',
+        kind: vscode.CompletionItemKind.Snippet,
+        documentation: 'Bucle for básico.',
+        insertText: new vscode.SnippetString(
+            `for (let ${1:i} = 0; ${1:i} < ${2:array}.length; ${1:i}++) {\n\t${3:console.log(${2:array}[${1:i}])}\n}`
+        ),
+    }
+    ```
+
+    <Tip>
+      After inserting, press `Tab` to jump between customization points. The iterator variable is automatically synchronized across all occurrences.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="console-log - Console Log Statement" icon="terminal">
+    Quickly insert a console.log statement with a placeholder for your message.
+
+    **Trigger**: Type `console-log` and select from completions
+
+    **Generated Code**:
+    ```javascript
+    console.log(mensaje);
+    ```
+
+    **Tab Stops**:
+    - `$1` - Message or variable to log (default: `mensaje`)
+
+    **Implementation**:
+    ```typescript
+    {
+        label: 'console-log',
+        kind: vscode.CompletionItemKind.Snippet,
+        documentation: 'Imprime un mensaje en la consola.',
+        insertText: new vscode.SnippetString(`console.log(${1:mensaje});`),
+    }
+    ```
+
+    <Tip>
+      This snippet is perfect for quick debugging. Just start typing `console-log`, select the snippet, and immediately type what you want to log.
+    </Tip>
+  </Accordion>
+</AccordionGroup>
+
+## How to Use Snippets
+
+<Steps>
+  <Step title="Start Typing">
+    Begin typing the snippet label (e.g., `for-loop` or `console-log`) in your editor.
+  </Step>
+  
+  <Step title="Select from Completions">
+    The snippet will appear in the completion list. Select it with your arrow keys and press `Enter` or `Tab`.
+  </Step>
+  
+  <Step title="Customize with Tab Stops">
+    Use `Tab` to jump between customization points. Type your values at each stop.
+  </Step>
+  
+  <Step title="Continue Coding">
+    Press `Escape` or move your cursor away when you're done customizing.
+  </Step>
+</Steps>
+
+## Snippet Registration
+
+Snippets are automatically registered for all supported languages when the extension activates:
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+    settings.supportedLanguages.forEach(language => {
+        const snippetProvider = vscode.languages.registerCompletionItemProvider(  
+            { scheme: 'file', language },
+            new SnippetCompletionProvider()
+        );
+
+        context.subscriptions.push(snippetProvider);
+    });
+}
+```
+
+By default, snippets work in JavaScript, TypeScript, and Python files. See [Configuration](/guides/configuration) to add more languages.
+
+## Snippet Syntax
+
+Snippets use VSCode's `SnippetString` format with the following features:
+
+### Tab Stops
+
+Tab stops are placeholders where the cursor will jump when you press `Tab`:
+
+```typescript
+${1:defaultValue}  // First tab stop with default value
+${2:another}       // Second tab stop
+$3                 // Third tab stop (no default)
+```
+
+### Synchronized Variables
+
+Using the same tab stop number multiple times keeps them synchronized:
+
+```typescript
+`for (let ${1:i} = 0; ${1:i} < ${2:array}.length; ${1:i}++)`
+// All three ${1:i} are linked - changing one updates all
+```
+
+<Note>
+  The `for-loop` snippet uses this feature to ensure the iterator variable is consistent throughout the loop.
+</Note>
+
+## Error Handling
+
+The snippet provider includes a safety check to handle empty snippet arrays:
+
+```typescript
+if (snippets.length === 0) {
+    // Si no hay snippets, retornar un arreglo vacío para evitar el error
+    return [];
+}
+```
+
+This prevents errors if the snippet array is modified or cleared during development.
+
+## Adding Custom Snippets
+
+To add your own snippets, modify the `snippets` array in `snippetProvider.ts`:
+
+```typescript
+const snippets = [
+    // Existing snippets...
+    {
+        label: 'your-snippet-name',
+        kind: vscode.CompletionItemKind.Snippet,
+        documentation: 'Description of what your snippet does.',
+        insertText: new vscode.SnippetString('your code here with ${1:tabstops}'),
+    },
+];
+```
+
+<Warning>
+  After adding snippets, you'll need to reload the VSCode window for changes to take effect.
+</Warning>
+
+## Snippets vs AI Completion
+
+| Feature | Snippets | AI Completion |
+|---------|----------|---------------|
+| **Speed** | Instant | 1-3 seconds |
+| **Accuracy** | 100% predictable | Variable |
+| **Internet Required** | No | Yes |
+| **Customization** | Predefined patterns | Context-aware |
+| **Best For** | Common patterns | Complex logic |
+
+<Tip>
+  Use snippets for frequently-used patterns you want instantly, and AI completion for context-specific suggestions.
+</Tip>
+
+## Next Steps
+
+- Learn about [AI Completion](/guides/ai-completion) for intelligent suggestions
+- Configure supported languages in [Configuration](/guides/configuration)
+- Contribute custom snippets to the extension

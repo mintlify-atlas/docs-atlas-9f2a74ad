@@ -1,0 +1,318 @@
+---
+title: Frequently Asked Questions
+description: Common questions about duv'Assistant
+icon: question
+---
+
+## General Questions
+
+<Accordion title="What is duv'Assistant?">
+
+duv'Assistant is a VSCode extension that provides intelligent code completion using AI. It combines:
+
+- **AI-powered completions** from OpenAI's language models
+- **Snippet-based completions** for faster, offline suggestions
+
+The extension registers completion providers for supported languages (JavaScript, TypeScript, and Python) and automatically activates when you open files in these languages.
+
+</Accordion>
+
+<Accordion title="What languages are supported?">
+
+Currently, duv'Assistant supports:
+
+- **JavaScript** (.js files)
+- **TypeScript** (.ts files)
+- **Python** (.py files)
+
+These languages are defined in `/workspace/source/src/config/settings.ts:6`.
+
+### Adding More Languages
+
+You can easily add support for additional languages:
+
+1. Open `src/config/settings.ts`
+2. Add language identifiers to the `supportedLanguages` array:
+
+```typescript
+supportedLanguages: ['javascript', 'typescript', 'python', 'java', 'go']
+```
+
+3. Rebuild and reload the extension
+
+<Info>
+  Use VSCode's language identifiers: `java`, `cpp`, `csharp`, `php`, `ruby`, `go`, `rust`, etc.
+</Info>
+
+</Accordion>
+
+<Accordion title="How do I get an OpenAI API key?">
+
+<Warning>
+  An OpenAI API key is **required** for the AI completion features to work.
+</Warning>
+
+### Steps to obtain an API key:
+
+1. Go to [platform.openai.com](https://platform.openai.com)
+2. Sign up or log in to your account
+3. Navigate to [API Keys](https://platform.openai.com/api-keys)
+4. Click "Create new secret key"
+5. Copy the key (you won't be able to see it again!)
+
+### Configuring the key:
+
+The API key must be hardcoded in the source:
+
+1. Open `src/config/settings.ts`
+2. Replace `'TU_API_KEY'` with your actual key:
+
+```typescript
+export const settings = {
+    openAI: {
+        apiKey: 'sk-proj-your-actual-key-here',
+        model: 'code-davinci-002',
+    },
+    supportedLanguages: ['javascript', 'typescript', 'python'],
+};
+```
+
+<Note>
+  Keep your API key secure and never commit it to public repositories!
+</Note>
+
+</Accordion>
+
+<Accordion title="What OpenAI model is used?">
+
+The extension is configured to use **`code-davinci-002`** by default.
+
+This is defined in `src/config/settings.ts:4`:
+
+```typescript
+openAI: {
+    apiKey: 'TU_API_KEY',
+    model: 'code-davinci-002',
+}
+```
+
+### Changing the model
+
+You can modify this to use other OpenAI models:
+
+```typescript
+model: 'gpt-4',          // For GPT-4
+model: 'gpt-3.5-turbo',  // For GPT-3.5 Turbo
+```
+
+<Note>
+  Different models have different capabilities and costs. Check OpenAI's pricing and model documentation before changing.
+</Note>
+
+</Accordion>
+
+## Features
+
+<Accordion title="What triggers AI completions?">
+
+AI completions are triggered automatically when:
+
+1. **You type in a supported file** (.js, .ts, or .py)
+2. **The completion popup appears** (usually after a brief pause in typing)
+3. **You manually trigger completions** with `Ctrl+Space`
+
+### How it works:
+
+From `aiProvider.ts:9-10`, the extension:
+
+1. Captures all code from the start of the file to your cursor position
+2. Sends it to OpenAI with the prompt: "Completa el siguiente código:"
+3. Returns the AI suggestion as a completion item labeled "Sugerencia de IA"
+
+### Note on behavior:
+
+The extension sends the **entire file content up to the cursor** on each completion request. For very large files, this may:
+- Increase API costs
+- Slow down response time
+- Provide more context to the AI
+
+</Accordion>
+
+<Accordion title="How are snippets different from AI completions?">
+
+The extension provides **two types of completion providers**, registered in `extension.ts:8-16`:
+
+### AI Completions
+- **Source:** OpenAI API (online)
+- **Provider:** `AICompletionProvider`
+- **Label:** "Sugerencia de IA"
+- **Speed:** Slower (network request required)
+- **Context-aware:** Yes, analyzes your entire file
+- **Cost:** Uses OpenAI API credits
+
+### Snippet Completions
+- **Source:** Local templates (offline)
+- **Provider:** `SnippetCompletionProvider`
+- **Speed:** Instant (no network request)
+- **Context-aware:** No, uses predefined templates
+- **Cost:** Free
+
+### When to use each:
+
+- Use **AI completions** for complex, context-specific code suggestions
+- Use **snippet completions** for common patterns, boilerplate, and offline work
+
+</Accordion>
+
+<Accordion title="Is my code sent to OpenAI?">
+
+<Warning>
+  Yes, your code is sent to OpenAI's servers when using AI completions.
+</Warning>
+
+### What gets sent:
+
+From `aiProvider.ts:9`, the extension sends:
+- All code from the **beginning of the file** to your **current cursor position**
+- This is formatted as a prompt: "Completa el siguiente código:\n\n[your code]"
+
+### Privacy considerations:
+
+1. **Every completion request** sends code to OpenAI
+2. This includes sensitive information if present in your file
+3. The data is subject to OpenAI's [data usage policies](https://openai.com/policies/api-data-usage-policies)
+
+### What you can do:
+
+- **Don't use AI completions** on files with sensitive information
+- Use **snippet completions** instead for offline, private work
+- Review OpenAI's data policies
+- Consider using local AI models for sensitive projects
+
+<Info>
+  Snippet completions do NOT send any code to external servers.
+</Info>
+
+</Accordion>
+
+## Technical Questions
+
+<Accordion title="How does the extension activate?">
+
+From `extension.ts:6-22`, the activation process:
+
+1. **Extension activates** when VSCode opens a file in a supported language
+2. **Iterates through supported languages** (JavaScript, TypeScript, Python)
+3. **Registers two completion providers** for each language:
+   - `AICompletionProvider` for AI-powered suggestions
+   - `SnippetCompletionProvider` for snippet-based suggestions
+4. **Adds providers to subscriptions** for proper disposal
+5. **Shows confirmation message**: "Extensión de autocompletado activada."
+
+### Deactivation:
+
+When the extension deactivates, it:
+- Disposes of all registered providers
+- Shows the message: "Extensión de autocompletado desactivada."
+
+</Accordion>
+
+<Accordion title="How are API errors handled?">
+
+The extension has error handling at two levels:
+
+### AI Provider Level (`aiProvider.ts:19-22`)
+
+```typescript
+try {
+    const suggestion = await getCodeSuggestion(prompt, undefined, { method: 'POST' });
+    // ... create completion item
+} catch (error) {
+    console.error('Error al generar sugerencia de IA:', error);
+    return []; // Returns empty array, no completions shown
+}
+```
+
+Errors are logged but don't crash the extension. You simply won't see AI suggestions.
+
+### HTTP Client Level (`httpClient.ts:8-10`)
+
+```typescript
+catch (error) {
+    console.error('Error en la solicitud HTTP:', error);
+    throw new Error('Error en la comunicación con la API.');
+}
+```
+
+HTTP errors are caught, logged, and re-thrown with a user-friendly message.
+
+### Where to see errors:
+
+- VSCode Developer Tools Console (Help → Toggle Developer Tools)
+- Look for messages starting with "Error al generar sugerencia de IA" or "Error en la solicitud HTTP"
+
+</Accordion>
+
+<Accordion title="Can I use this extension offline?">
+
+**Partially.** The extension has both online and offline capabilities:
+
+### Offline Features ✓
+- **Snippet completions** work completely offline
+- Extension activation and basic functionality
+- Local code analysis
+
+### Online Features (require internet) ✗
+- **AI completions** require connection to OpenAI's API
+- Any AI-powered suggestions
+
+### Recommendation:
+
+For offline development:
+1. Rely on the `SnippetCompletionProvider` for completions
+2. The AI features will silently fail and log errors to console
+3. No completions labeled "Sugerencia de IA" will appear
+
+</Accordion>
+
+<Accordion title="How much does it cost to use?">
+
+### Extension Cost
+The extension itself is free.
+
+### OpenAI API Costs
+You pay for OpenAI API usage based on:
+
+- **Model used:** `code-davinci-002` (default)
+- **Number of tokens:** Each completion request sends your code as a prompt
+- **Request frequency:** Every time completions are triggered
+
+### Cost factors:
+
+1. **File size:** Larger files = more tokens = higher cost
+   - The extension sends all code from line 1 to cursor position (aiProvider.ts:9)
+
+2. **Usage frequency:** More completions = more API calls = higher cost
+
+3. **Model choice:** Different models have different pricing
+
+### Cost management:
+
+- Use snippet completions for common patterns (free)
+- Set rate limits on your OpenAI account
+- Monitor usage in your OpenAI dashboard
+- Consider switching to a less expensive model in `settings.ts`
+
+<Note>
+  Check current OpenAI pricing at [openai.com/api/pricing](https://openai.com/api/pricing)
+</Note>
+
+</Accordion>
+
+## Need More Help?
+
+If your question isn't answered here:
+
+- Check the [Troubleshooting guide](/troubleshooting) for common issues
+- Review the [Getting Started](/quickstart) guide
+- Examine the source code in the `src/` directory

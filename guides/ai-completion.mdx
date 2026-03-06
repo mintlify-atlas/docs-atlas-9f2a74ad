@@ -1,0 +1,163 @@
+---
+title: 'AI-Powered Code Completion'
+description: 'Learn how duv Assistant uses OpenAI to provide intelligent code suggestions'
+icon: 'sparkles'
+---
+
+## Overview
+
+duv'Assistant's AI completion feature provides intelligent code suggestions powered by OpenAI. As you type, the extension analyzes the context of your code and generates relevant completions using advanced language models.
+
+## How AI Completion Works
+
+The AI completion system follows a simple but powerful flow:
+
+<Steps>
+  <Step title="Capture Context">
+    When you trigger a completion, the extension captures all text from the beginning of the file up to your cursor position.
+  </Step>
+  
+  <Step title="Send to OpenAI">
+    The captured context is sent to OpenAI's API with a prompt requesting code completion.
+  </Step>
+  
+  <Step title="Display Suggestion">
+    The AI-generated suggestion is presented as a completion item in your editor.
+  </Step>
+</Steps>
+
+## Implementation Details
+
+The core of the AI completion system is the `AICompletionProvider` class, which implements VSCode's `CompletionItemProvider` interface:
+
+```typescript
+import * as vscode from 'vscode';
+import { getCodeSuggestion } from '../utils/httpClient';
+
+export class AICompletionProvider implements vscode.CompletionItemProvider {
+    async provideCompletionItems(
+        document: vscode.TextDocument,
+        position: vscode.Position
+    ): Promise<vscode.CompletionItem[]> {
+        const textBeforeCursor = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
+        const prompt = `Completa el siguiente código:\n\n${textBeforeCursor}`;
+
+        try {
+            const suggestion = await getCodeSuggestion(prompt, undefined, { method: 'POST' });
+
+            const item = new vscode.CompletionItem('Sugerencia de IA', vscode.CompletionItemKind.Snippet);
+            item.insertText = suggestion.trim();
+            item.documentation = new vscode.MarkdownString('Sugerencia generada por OpenAI.');
+            return [item];
+        } catch (error) {
+            console.error('Error al generar sugerencia de IA:', error);
+            return [];
+        }
+    }
+}
+```
+
+### Context Extraction
+
+The provider extracts context using VSCode's `TextDocument` API:
+
+```typescript
+const textBeforeCursor = document.getText(
+    new vscode.Range(new vscode.Position(0, 0), position)
+);
+```
+
+This captures everything from line 0, column 0 to the current cursor position, giving the AI model maximum context about your code.
+
+### API Communication
+
+The extension uses a dedicated HTTP client (`httpClient.ts`) to communicate with OpenAI:
+
+```typescript
+import axios from 'axios';
+
+export async function getCodeSuggestion(url: string, data: any, headers: any = {}) {
+    try {
+        const response = await axios.post(url, data, { headers });
+        return response.data;
+    } catch (error) {
+        console.error('Error en la solicitud HTTP:', error);
+        throw new Error('Error en la comunicación con la API.');
+    }
+}
+```
+
+## Configuration
+
+To use AI completion, you need to configure your OpenAI API credentials:
+
+<ParamField path="openAI.apiKey" type="string" required>
+  Your OpenAI API key. Get one from [platform.openai.com](https://platform.openai.com/api-keys)
+</ParamField>
+
+<ParamField path="openAI.model" type="string" default="code-davinci-002">
+  The OpenAI model to use for completions. Options include:
+  - `code-davinci-002` - Most capable code model
+  - `code-cushman-001` - Faster, less capable alternative
+</ParamField>
+
+See the [Configuration](/guides/configuration) guide for detailed setup instructions.
+
+## Registration and Activation
+
+The AI completion provider is automatically registered for all supported languages when the extension activates:
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+    settings.supportedLanguages.forEach(language => {
+        const aiProvider = vscode.languages.registerCompletionItemProvider(
+            { scheme: 'file', language },
+            new AICompletionProvider()
+        );
+
+        context.subscriptions.push(aiProvider);
+    });
+}
+```
+
+## Tips for Best Results
+
+<Tip>
+  **Provide Clear Context**: The AI generates better suggestions when you have meaningful variable names, comments, and structured code above your cursor.
+</Tip>
+
+<Tip>
+  **Wait for Full Context**: If you're starting a new function or block, write the function signature or opening comment first to give the AI more context.
+</Tip>
+
+<Note>
+  AI suggestions appear alongside regular VSCode completions. Look for items labeled "Sugerencia de IA" (AI Suggestion).
+</Note>
+
+<Warning>
+  If the OpenAI API is unavailable or returns an error, the completion will fail silently and return an empty array. Check your console for error messages.
+</Warning>
+
+## Error Handling
+
+The provider includes built-in error handling to ensure a smooth experience:
+
+- If the API request fails, errors are logged to the console
+- An empty completion array is returned instead of crashing
+- Users can continue working without interruption
+
+```typescript
+try {
+    const suggestion = await getCodeSuggestion(prompt, undefined, { method: 'POST' });
+    // ... create completion item
+} catch (error) {
+    console.error('Error al generar sugerencia de IA:', error);
+    return [];
+}
+```
+
+## Next Steps
+
+- Learn about [Snippets](/guides/snippets) for predefined code templates
+- Configure the extension in [Configuration](/guides/configuration)
+- Explore supported languages and how to add more
